@@ -1,0 +1,56 @@
+name: Build and Deploy .NET App to Azure Windows VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+
+    steps:
+    # Checkout source code
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # Setup .NET SDK
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    # Restore dependencies
+    - name: Restore
+      run: dotnet restore src/MyDotNetApp/MyDotNetApp.csproj
+
+    # Build application
+    - name: Build
+      run: dotnet build src/MyDotNetApp/MyDotNetApp.csproj --configuration Release --no-restore
+
+    # Publish application
+    - name: Publish
+      run: dotnet publish src/MyDotNetApp/MyDotNetApp.csproj --configuration Release --output publish
+
+    # Copy files to Azure Windows VM using SCP
+    - name: Copy files to Azure VM
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.AZURE_VM_HOST }}
+        username: ${{ secrets.AZURE_VM_USER }}
+        key: ${{ secrets.AZURE_VM_SSH_KEY }}
+        source: "publish/*"
+        target: "C:/apps/dotnet-app"
+
+    # Restart application on Windows VM
+    - name: Restart application
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.AZURE_VM_HOST }}
+        username: ${{ secrets.AZURE_VM_USER }}
+        key: ${{ secrets.AZURE_VM_SSH_KEY }}
+        script: |
+          powershell -Command "
+          Stop-Service -Name DotNetApp -ErrorAction SilentlyContinue;
+          Start-Service -Name DotNetApp
+          "
