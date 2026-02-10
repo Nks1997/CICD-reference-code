@@ -1,4 +1,4 @@
-# DevOps Tools & Skills Reference (Mid-Level, 16 LPA)
+# DevOps Tools & Skills Reference
 
 This document lists DevOps tools and technologies organized by category, including priority for learning and usage.
 
