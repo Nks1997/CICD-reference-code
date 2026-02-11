@@ -1,0 +1,109 @@
+# ------------------------
+# Deployment Example
+# ------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
+---
+# ------------------------
+# ClusterIP Service (Internal)
+# ------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-clusterip-service
+  labels:
+    app: my-app
+spec:
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
+
+---
+# ------------------------
+# NodePort Service (External Node Access)
+# ------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-nodeport-service
+  labels:
+    app: my-app
+spec:
+  selector:
+    app: my-app
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+
+---
+# ------------------------
+# LoadBalancer Service (Azure External IP)
+# ------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-loadbalancer-service
+  labels:
+    app: my-app
+spec:
+  selector:
+    app: my-app
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+
+---
+# ------------------------
+# Ingress Example (Azure AKS)
+# ------------------------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+  labels:
+    app: my-app
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # Azure-specific annotations
+    # appgw.ingress.kubernetes.io/use-private-ip: "true"  # Use Application Gateway internal IP
+    # kubernetes.io/ingress.allow-http: "true"          # Allow HTTP traffic
+spec:
+  rules:
+    - host: myapp.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-loadbalancer-service
+                port:
+                  number: 80
+
